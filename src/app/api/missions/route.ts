@@ -34,19 +34,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Difficulty must be 1, 2, or 3" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  const insertPayload: Record<string, unknown> = {
+    user_id: user.id,
+    title: title.trim(),
+    category,
+    difficulty: Number(difficulty),
+    status: "pending",
+  };
+
+  if (metric_value != null && !isNaN(Number(metric_value))) {
+    insertPayload.metric_value = Number(metric_value);
+  }
+  if (metric_unit && typeof metric_unit === "string" && metric_unit.trim()) {
+    insertPayload.metric_unit = metric_unit.trim();
+  }
+
+  let { data, error } = await supabase
     .from("tasks")
-    .insert({
-      user_id: user.id,
-      title: title.trim(),
-      category,
-      difficulty: Number(difficulty),
-      status: "pending",
-      metric_value: metric_value != null ? Number(metric_value) : null,
-      metric_unit: metric_unit?.trim() || null,
-    })
+    .insert(insertPayload)
     .select()
     .single();
+
+  // If Supabase table hasn't migrated metric columns yet, fallback to base mission insert
+  if (error && (error.message?.includes("metric_unit") || error.message?.includes("metric_value"))) {
+    const fallback = await supabase
+      .from("tasks")
+      .insert({
+        user_id: user.id,
+        title: title.trim(),
+        category,
+        difficulty: Number(difficulty),
+        status: "pending",
+      })
+      .select()
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ task: data }, { status: 201 });

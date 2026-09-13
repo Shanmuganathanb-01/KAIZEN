@@ -24,11 +24,29 @@ CREATE TABLE IF NOT EXISTS tasks (
   category text NOT NULL DEFAULT 'discipline',
   difficulty smallint NOT NULL DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 3),
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','completed')),
+  metric_value numeric DEFAULT NULL,
+  metric_unit text DEFAULT NULL,
   created_at timestamptz DEFAULT now(),
   completed_at timestamptz
 );
 
--- 3. Shop items table
+-- 3. Goals table (custom real-world reward goals)
+CREATE TABLE IF NOT EXISTS goals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
+  title text NOT NULL,
+  category text NOT NULL CHECK (category IN ('strength','intellect','discipline','creativity')),
+  target_value numeric NOT NULL,
+  metric_unit text,
+  period_start date NOT NULL,
+  period_end date NOT NULL,
+  reward_text text NOT NULL,
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','achieved','expired')),
+  achieved_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 4. Shop items table
 CREATE TABLE IF NOT EXISTS shop_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -37,7 +55,7 @@ CREATE TABLE IF NOT EXISTS shop_items (
   type text NOT NULL CHECK (type IN ('badge','frame','banner'))
 );
 
--- 4. User inventory table
+-- 5. User inventory table
 CREATE TABLE IF NOT EXISTS user_inventory (
   user_id uuid REFERENCES auth.users ON DELETE CASCADE,
   item_id uuid REFERENCES shop_items ON DELETE CASCADE,
@@ -45,13 +63,14 @@ CREATE TABLE IF NOT EXISTS user_inventory (
   PRIMARY KEY (user_id, item_id)
 );
 
--- 5. Enable RLS
+-- 6. Enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shop_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_inventory ENABLE ROW LEVEL SECURITY;
 
--- 6. RLS Policies
+-- 7. RLS Policies
 DROP POLICY IF EXISTS "profiles_select" ON profiles;
 CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (auth.uid() = id);
 DROP POLICY IF EXISTS "profiles_update" ON profiles;
@@ -66,6 +85,15 @@ CREATE POLICY "tasks_update" ON tasks FOR UPDATE USING (auth.uid() = user_id);
 DROP POLICY IF EXISTS "tasks_delete" ON tasks;
 CREATE POLICY "tasks_delete" ON tasks FOR DELETE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "goals_select" ON goals;
+CREATE POLICY "goals_select" ON goals FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "goals_insert" ON goals;
+CREATE POLICY "goals_insert" ON goals FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "goals_update" ON goals;
+CREATE POLICY "goals_update" ON goals FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "goals_delete" ON goals;
+CREATE POLICY "goals_delete" ON goals FOR DELETE USING (auth.uid() = user_id);
+
 DROP POLICY IF EXISTS "shop_items_select" ON shop_items;
 CREATE POLICY "shop_items_select" ON shop_items FOR SELECT USING (true);
 
@@ -74,7 +102,7 @@ CREATE POLICY "inventory_select" ON user_inventory FOR SELECT USING (auth.uid() 
 DROP POLICY IF EXISTS "inventory_insert" ON user_inventory;
 CREATE POLICY "inventory_insert" ON user_inventory FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- 7. Auto-create profile on signup
+-- 8. Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
