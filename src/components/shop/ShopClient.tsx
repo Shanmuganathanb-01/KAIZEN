@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Loader2, CheckCircle, Lock } from "lucide-react";
 import { Toast, useToast } from "@/components/ui/Toast";
+import { createClient } from "@/lib/supabase/client";
 import type { ShopItem } from "@/types";
 
 interface ShopItemWithOwned extends ShopItem { owned: boolean; }
@@ -19,6 +20,19 @@ const typeConfig: Record<string, { label: string; color: string; bg: string }> =
   banner: { label: "BANNER", color: "#ffd700", bg: "#ffd70020" },
 };
 
+async function getAuthHeaders() {
+  try {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    };
+  } catch {
+    return { "Content-Type": "application/json" };
+  }
+}
+
 export function ShopClient({ items, gold: initialGold }: ShopClientProps) {
   const [gold, setGold] = useState(initialGold);
   const [inventory, setInventory] = useState(new Set(items.filter(i => i.owned).map(i => i.id)));
@@ -29,11 +43,16 @@ export function ShopClient({ items, gold: initialGold }: ShopClientProps) {
     if (inventory.has(item.id) || gold < item.cost) return;
     setLoading(item.id);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/shop/purchase", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ item_id: item.id }),
       });
+      if (res.status === 401) {
+        window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+        return;
+      }
       const json = await res.json();
       if (!res.ok) {
         addToast(json.error ?? "Purchase failed", "error");

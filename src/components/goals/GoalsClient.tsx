@@ -7,10 +7,24 @@ import { GoalCard } from "./GoalCard";
 import { NewGoalModal } from "./NewGoalModal";
 import { GoalAchievedModal } from "./GoalAchievedModal";
 import { Toast, useToast } from "@/components/ui/Toast";
+import { createClient } from "@/lib/supabase/client";
 import type { GoalWithProgress } from "@/types";
 
 interface GoalsClientProps {
   initialGoals: GoalWithProgress[];
+}
+
+async function getAuthHeaders() {
+  try {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    };
+  } catch {
+    return { "Content-Type": "application/json" };
+  }
 }
 
 export function GoalsClient({ initialGoals }: GoalsClientProps) {
@@ -28,11 +42,16 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
     title: string; category: string; target_value: number;
     metric_unit: string; period_start: string; period_end: string; reward_text: string;
   }) {
+    const headers = await getAuthHeaders();
     const res = await fetch("/api/goals", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(data),
     });
+    if (res.status === 401) {
+      window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+      return;
+    }
     const json = await res.json();
     if (!res.ok) throw new Error(json.error ?? "Failed to create goal");
     setGoals((prev) => [json.goal, ...prev]);
@@ -40,7 +59,12 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
   }
 
   const handleDelete = useCallback(async (id: string) => {
-    const res = await fetch(`/api/goals/${id}`, { method: "DELETE" });
+    const headers = await getAuthHeaders();
+    const res = await fetch(`/api/goals/${id}`, { method: "DELETE", headers });
+    if (res.status === 401) {
+      window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+      return;
+    }
     if (!res.ok) { addToast("Failed to delete goal", "error"); return; }
     setGoals((prev) => prev.filter((g) => g.id !== id));
     addToast("Goal removed", "info");

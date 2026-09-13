@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { GoalWithProgress } from "@/types";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: taskId } = await params;
 
-  // 1. Auth check
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // 1. Auth check (checks Bearer token + cookies)
+  const { supabase, user } = await getAuthUser(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // 2. Fetch task + verify ownership

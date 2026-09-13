@@ -32,8 +32,7 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard/missions");
-      router.refresh();
+      window.location.href = "/dashboard/missions";
     }
   }
 

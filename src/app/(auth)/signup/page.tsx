@@ -47,8 +47,7 @@ export default function SignupPage() {
     }
     if (data.user) {
       await supabase.from("profiles").update({ username }).eq("id", data.user.id);
-      router.push("/dashboard/missions");
-      router.refresh();
+      window.location.href = "/dashboard/missions";
     }
   }
 

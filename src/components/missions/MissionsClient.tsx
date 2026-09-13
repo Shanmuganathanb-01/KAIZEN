@@ -10,6 +10,7 @@ import { Toast, useToast } from "@/components/ui/Toast";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { GoalAchievedModal } from "@/components/goals/GoalAchievedModal";
+import { createClient } from "@/lib/supabase/client";
 import type { Task, Profile, CompleteTaskResponse, GoalWithProgress } from "@/types";
 
 interface MissionsClientProps {
@@ -19,6 +20,19 @@ interface MissionsClientProps {
 
 function xpToNextLevel(level: number) {
   return Math.floor(50 * Math.pow(level, 1.5));
+}
+
+async function getAuthHeaders() {
+  try {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    };
+  } catch {
+    return { "Content-Type": "application/json" };
+  }
 }
 
 export function MissionsClient({ initialTasks, initialProfile }: MissionsClientProps) {
@@ -37,11 +51,16 @@ export function MissionsClient({ initialTasks, initialProfile }: MissionsClientP
   const displayed = tab === "pending" ? pending : completed;
 
   async function handleCreate(data: { title: string; category: string; difficulty: number }) {
+    const headers = await getAuthHeaders();
     const res = await fetch("/api/missions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(data),
     });
+    if (res.status === 401) {
+      window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+      return;
+    }
     const json = await res.json();
     if (!res.ok) throw new Error(json.error ?? "Failed to create mission");
     setTasks(prev => [json.task, ...prev]);
@@ -55,7 +74,12 @@ export function MissionsClient({ initialTasks, initialProfile }: MissionsClientP
     ));
 
     try {
-      const res = await fetch(`/api/missions/${taskId}/complete`, { method: "POST" });
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/missions/${taskId}/complete`, { method: "POST", headers });
+      if (res.status === 401) {
+        window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+        return;
+      }
       const json: CompleteTaskResponse & { error?: string } = await res.json();
 
       if (!res.ok) {
@@ -92,7 +116,12 @@ export function MissionsClient({ initialTasks, initialProfile }: MissionsClientP
   }, [profile.level, addToast]);
 
   const handleDelete = useCallback(async (taskId: string) => {
-    const res = await fetch(`/api/missions/${taskId}`, { method: "DELETE" });
+    const headers = await getAuthHeaders();
+    const res = await fetch(`/api/missions/${taskId}`, { method: "DELETE", headers });
+    if (res.status === 401) {
+      window.location.href = "/login?error=Session+expired.+Please+log+in+again.";
+      return;
+    }
     if (!res.ok) {
       addToast("Failed to delete mission", "error");
       return;

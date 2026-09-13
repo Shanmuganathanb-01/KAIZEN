@@ -21,3 +21,23 @@ export async function createClient() {
     }
   );
 }
+
+export async function getAuthUser(request?: Request) {
+  const supabase = await createClient();
+
+  if (request) {
+    const authHeader = request.headers.get("Authorization") || request.headers.get("authorization");
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        const { data, error } = await supabase.auth.getUser(token);
+        if (data?.user && !error) {
+          return { supabase, user: data.user };
+        }
+      }
+    }
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  return { supabase, user };
+}
