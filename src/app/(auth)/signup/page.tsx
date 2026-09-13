@@ -16,11 +16,11 @@ export default function SignupPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     setError(null);
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -34,6 +34,7 @@ export default function SignupPage() {
     if (password.length < 6) { setError("Access code must be at least 6 characters"); return; }
     setLoading(true);
 
+    const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { data: { username }, emailRedirectTo: `${window.location.origin}/dashboard/missions` },
