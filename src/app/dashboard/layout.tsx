@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/ui/DashboardNav";
 import { KaizenLogo } from "@/components/ui/KaizenLogo";
 
+import { CertifiedStatement } from "@/components/ui/CertifiedStatement";
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,8 +46,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </header>
 
-        <div className="relative z-10 max-w-4xl mx-auto p-4 md:p-8">
-          {children}
+        <div className="relative z-10 max-w-4xl mx-auto p-4 md:p-8 flex flex-col min-h-[calc(100vh-60px)]">
+          <div className="flex-1">
+            {children}
+          </div>
+          <div className="mt-12 mb-4 flex justify-center text-center">
+            <CertifiedStatement />
+          </div>
         </div>
       </main>
 

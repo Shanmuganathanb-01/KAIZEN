@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import { CertifiedStatement } from "@/components/ui/CertifiedStatement";
 
 export default function LandingPage() {
   const stopRefs = useRef<HTMLDivElement[]>([]);
@@ -270,6 +271,9 @@ export default function LandingPage() {
               <a href="#" className={styles.footLink}>Docs</a>
               <a href="#" className={styles.footLink}>Contact</a>
             </div>
+          </div>
+          <div className="flex justify-center mt-8 pb-4 text-center">
+            <CertifiedStatement />
           </div>
         </footer>
 

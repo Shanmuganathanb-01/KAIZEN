@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { KaizenLogo } from "@/components/ui/KaizenLogo";
+import { CertifiedStatement } from "@/components/ui/CertifiedStatement";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -47,8 +48,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: "radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.85) 100%)", zIndex: 1 }} />
 
-      <div className="relative z-10 w-full max-w-md px-4 py-8">
+      <div className="relative z-10 w-full max-w-md px-4 py-8 flex flex-col items-center">
         {children}
+        <div className="mt-6 text-center">
+          <CertifiedStatement />
+        </div>
       </div>
     </div>
   );

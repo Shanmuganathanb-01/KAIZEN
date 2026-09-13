@@ -51,6 +51,7 @@ export interface Goal {
   title: string;
   category: GoalCategory;
   target_value: number;
+  metric_unit?: string | null;
   period_start: string; // date string
   period_end: string;   // date string
   reward_text: string;
