@@ -1,6 +1,6 @@
-# NEURAL QUEST — Life RPG
+# KAIZEN
 
-> A cyberpunk gamified productivity app. Complete missions, earn Credits, level up your hacker.
+KAIZEN is a cyberpunk-themed Life RPG that turns daily tasks and habits into gamified progression. Complete missions to earn XP, level up, gain gold, and build real-life attributes. Set personal goals with custom real-world rewards, stay accountable, and level up your life. Built with Next.js, Supabase, and a futuristic neon aesthetic.
 
 ![Neural Quest](https://img.shields.io/badge/Stack-Next.js%2014%20%2B%20Supabase-00ff9f?style=for-the-badge)
 
@@ -58,20 +58,20 @@ Open [http://localhost:3000](http://localhost:3000)
 
 All XP/gold/level progression is computed **server-side only**:
 
-- `POST /api/missions/[id]/complete` — verifies ownership, calls `complete_task` Postgres RPC
+- `POST /api/missions/[id]/complete` â€” verifies ownership, calls `complete_task` Postgres RPC
 - The RPC runs in a single transaction: marks task complete, computes rewards, updates profile
 - A `BEFORE UPDATE` trigger on `profiles` blocks client-side writes to `xp`, `gold`, `level`, `streak_count`, `attributes`
 - The API route uses the `service_role` key (server-only) to bypass RLS and call the RPC
 
 ## Features
 
-- ?? **Missions (Tasks)** — Create, complete, delete with optimistic UI
-- ?? **Character Sheet** — Level, Neural XP bar, Credits, streak, 4 skill attributes  
-- ?? **Black Market (Shop)** — Buy cosmetics with earned Credits
-- ?? **Level-Up Modal** — Framer Motion particle burst celebration
-- ?? **Anti-cheat** — Server-side progression, RLS + DB triggers
-- ?? **Responsive** — Mobile bottom nav, desktop sidebar
-- ? **Accessible** — Semantic HTML, ARIA roles, keyboard navigation
+- ?? **Missions (Tasks)** â€” Create, complete, delete with optimistic UI
+- ?? **Character Sheet** â€” Level, Neural XP bar, Credits, streak, 4 skill attributes
+- ?? **Black Market (Shop)** â€” Buy cosmetics with earned Credits
+- ?? **Level-Up Modal** â€” Framer Motion particle burst celebration
+- ?? **Anti-cheat** â€” Server-side progression, RLS + DB triggers
+- ?? **Responsive** â€” Mobile bottom nav, desktop sidebar
+- ? **Accessible** â€” Semantic HTML, ARIA roles, keyboard navigation
 
 ## Security
 
